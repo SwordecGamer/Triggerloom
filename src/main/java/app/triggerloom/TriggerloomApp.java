@@ -2,8 +2,10 @@
 package app.triggerloom;
 
 import app.triggerloom.core.ApplicationController;
+import app.triggerloom.core.ApplicationState;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
@@ -20,33 +22,38 @@ public class TriggerloomApp extends Application {
     public void start(Stage stage) {
         statusLabel = new Label();
 
+        controller.addStateListener((previous, current) ->
+                Platform.runLater(() -> updateStatus(current))
+        );
+
         BorderPane root = new BorderPane();
         root.setCenter(statusLabel);
 
         Scene scene = new Scene(root, 1000, 650);
 
         stage.setTitle("Triggerloom");
+        stage.setMinWidth(800);
+        stage.setMinHeight(500);
         stage.setScene(scene);
+
+        updateStatus(controller.getState());
         stage.show();
 
         try {
             controller.start();
-            updateStatus();
         } catch (Exception exception) {
-            statusLabel.setText(
-                    "Startup failed: " + exception.getMessage()
-            );
+            exception.printStackTrace();
         }
     }
 
-    private void updateStatus() {
-        statusLabel.setText(
-                "Application status: " + controller.getState()
-        );
+    private void updateStatus(ApplicationState state) {
+        statusLabel.setText("Application status: " + state);
     }
 
     @Override
     public void stop() throws Exception {
-        controller.stop();
+        if (controller.getState() == ApplicationState.RUNNING) {
+            controller.stop();
+        }
     }
 }
