@@ -104,6 +104,33 @@ class ApplicationControllerTest {
         );
     }
 
+    @Test
+    void notifiesListenersOfServiceStateChanges() throws Exception {
+        ApplicationController controller = new ApplicationController();
+
+        List<ServiceState> observedStates = new ArrayList<>();
+
+        controller.addServiceStatusListener(status ->
+                observedStates.add(status.state())
+        );
+
+        controller.registerService(service("Demo", new ArrayList<>()));
+
+        controller.start();
+        controller.stop();
+
+        assertEquals(
+                List.of(
+                        ServiceState.REGISTERED,
+                        ServiceState.STARTING,
+                        ServiceState.RUNNING,
+                        ServiceState.STOPPING,
+                        ServiceState.STOPPED
+                ),
+                observedStates
+        );
+    }
+
     private LifecycleService service(
             String name,
             List<String> events
